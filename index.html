@@ -29,8 +29,8 @@
     @keyframes warnDraw { to { stroke-dashoffset: 0; } }
     @keyframes warnShow { to { opacity: 1; } }
 
-    /* Layout — desplazado hacia abajo del centro */
-    .warn-body { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; padding: 120px 28px 0; animation: warnShow 0.5s ease 0.1s both; }
+    /* Layout */
+    .warn-body { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; padding: 70px 28px 0; animation: warnShow 0.5s ease 0.1s both; }
 
     /* Círculo principal */
     .warn-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
@@ -49,25 +49,26 @@
     */
     .tik-phase { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
-    /* Fase dots */
-    .tik-dots-phase { animation: tikDots 6s ease-in-out infinite; }
+    /* Fase dots — 4s cycle */
+    .tik-dots-phase { animation: tikDots 4s ease-in-out infinite; }
     @keyframes tikDots {
       0%,30%  { opacity:1; transform:scale(1); }
       38%,100%{ opacity:0; transform:scale(.9); }
     }
-    .tik-dots { display:flex; gap:10px; align-items:center; margin-bottom:6px; }
+    /* Dots centrados, mano en absoluto para no descentrar */
+    .tik-dots { display:flex; gap:10px; align-items:center; }
     .tik-dot  { width:13px; height:13px; border-radius:50%; background:#111; }
-    .tik-hand-wrap { display:flex; align-items:center; justify-content:center; font-size:32px; line-height:1;
-                     animation: tikHandMove 6s ease-in-out infinite; }
+    .tik-hand-wrap { position:absolute; bottom:14px; right:18px; font-size:28px; line-height:1;
+                     animation: tikHandMove 4s ease-in-out infinite; }
     @keyframes tikHandMove {
-      0%,20%  { transform:translate(14px,-4px); }
+      0%,20%  { transform:translate(8px,4px); }
       28%,30% { transform:translate(0,0); }
-      38%,100%{ transform:translate(0,0); opacity:0; }
+      38%,100%{ opacity:0; }
     }
 
     /* Partículas de click */
     .tik-spark-wrap { position:absolute; inset:0; pointer-events:none;
-                      animation: tikSpark 6s ease-in-out infinite; opacity:0; }
+                      animation: tikSpark 4s ease-in-out infinite; opacity:0; }
     @keyframes tikSpark {
       0%,30%  { opacity:0; }
       32%,38% { opacity:1; }
@@ -80,25 +81,26 @@
     .tik-spark:nth-child(4){ width:4px;height:4px;background:#e86e17;top:56px;left:60px; }
 
     /* Fase menú */
-    .tik-menu-phase { padding:0 8px; gap:0; animation:tikMenu 6s ease-in-out infinite; opacity:0; width:100%; }
+    .tik-menu-phase { padding:0 8px; gap:0; animation:tikMenu 4s ease-in-out infinite; opacity:0; width:100%; }
     @keyframes tikMenu {
       0%,40%  { opacity:0; transform:scale(.95); }
       48%,88% { opacity:1; transform:scale(1); }
       95%,100%{ opacity:0; transform:scale(.95); }
     }
-    .tik-menu-row { display:flex; align-items:center; gap:6px; padding:8px 10px; font-size:11px; font-weight:500; color:#222; border-bottom:1px solid rgba(0,0,0,0.07); }
+    .tik-menu-row { display:flex; align-items:center; gap:6px; padding:7px 10px; font-size:10.5px; font-weight:500; color:#222; border-bottom:1px solid rgba(0,0,0,0.07); }
     .tik-menu-row:last-child { border-bottom:none; }
-    .tik-menu-row svg { width:14px; height:14px; flex-shrink:0; opacity:0.6; }
-    .tik-menu-row.tik-sel { background:rgba(0,0,0,0.06); color:#000; font-weight:600; animation:tikSelPulse 6s ease-in-out infinite; }
+    .tik-menu-row svg { width:13px; height:13px; flex-shrink:0; opacity:0.6; }
+    .tik-menu-row.tik-sel { background:rgba(0,0,0,0.06); color:#000; font-weight:700; animation:tikSelPulse 4s ease-in-out infinite; }
     @keyframes tikSelPulse {
       0%,60%  { background:transparent; }
-      68%,80% { background:rgba(0,0,0,0.07); }
+      68%,80% { background:rgba(0,0,0,0.08); }
       85%,100%{ background:transparent; }
     }
-    .tik-cursor { position:absolute; bottom:28px; right:24px; font-size:22px; animation:tikCursor 6s ease-in-out infinite; opacity:0; }
+    /* Cursor apuntando a "Abrir en el navegador" (fila central) */
+    .tik-cursor { position:absolute; top:50%; right:10px; transform:translateY(-50%); font-size:20px; animation:tikCursor 4s ease-in-out infinite; opacity:0; }
     @keyframes tikCursor {
-      0%,48%   { opacity:0; transform:translate(10px,10px); }
-      56%,82%  { opacity:1; transform:translate(0,0); }
+      0%,48%   { opacity:0; transform:translateY(-50%) translate(8px,6px); }
+      56%,82%  { opacity:1; transform:translateY(-50%) translate(0,0); }
       88%,100% { opacity:0; }
     }
 
