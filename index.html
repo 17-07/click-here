@@ -24,6 +24,7 @@
     .warn-lottie-arrow { position: fixed; top: 0; right: 0; width: min(72vw, 380px); aspect-ratio: 16/9; filter: invert(1); transform-origin: top right; transform: translateX(-55%) translateY(-42%) rotate(-71deg) scale(1.55); pointer-events: none; z-index: 1; animation: warnFloat 2.4s ease-in-out 1.8s infinite; }
     @keyframes warnFloat { 0%,100% { transform: translateX(-55%) translateY(-42%) rotate(-71deg) scale(1.55); } 50% { transform: translateX(-55%) translateY(calc(-42% - 10px)) rotate(-71deg) scale(1.55); } }
     .warn-lottie-path { stroke-dasharray: 5000; stroke-dashoffset: 5000; animation: warnDraw 1.4s cubic-bezier(.3,0,.2,1) 0.3s forwards; }
+    /* dasharray se sobrescribe con el valor exacto vía JS para que la línea y el triángulo vayan en sync */
     /* .warn-lottie-head: opacity e posición gestionadas por SVG animate/animateMotion */
     @keyframes warnDraw { to { stroke-dashoffset: 0; } }
     @keyframes warnShow { to { opacity: 1; } }
@@ -186,8 +187,8 @@
             d="M-622,86 C-622,86 -179.18600463867188,299.8710021972656 144,110 C304,16 263.0509948730469,-187.8679962158203 101.35600280761719,-205.4770050048828 C-32,-220 -167.33900451660156,-142.71099853515625 -258,-4 C-458,302 -116,502 312.0010070800781,298 C685.052001953125,120.19000244140625 660,110 830,106"/>
           <!-- Triángulo que sigue el path con animateMotion -->
           <g class="warn-lottie-head" opacity="0">
-            <!-- rotate(-90) orienta el triángulo en +X para que rotate="auto" lo alinee con la tangente -->
-            <g transform="rotate(-90)">
+            <!-- rotate(90) orienta la punta del triángulo en +X para que rotate="auto" lo alinee con la dirección de avance -->
+            <g transform="rotate(90)">
               <path fill="black" d="M0,-100 C0,-100 86.6025390625,50 86.6025390625,50 C86.6025390625,50 -86.6025390625,50 -86.6025390625,50 C-86.6025390625,50 0,-100 0,-100z"/>
             </g>
             <!-- Aparece en el instante en que empieza la animación -->
@@ -566,6 +567,12 @@
     }
 
     function closeModal(id){var el=document.getElementById(id);if(el)el.setAttribute('hidden','');}
+
+    // Sincroniza dasharray con la longitud real del path para que línea y triángulo vayan en sync exacto
+    (function(){
+      var p=document.getElementById('warn-arrow-path');
+      if(p){var len=Math.ceil(p.getTotalLength());p.style.strokeDasharray=len;p.style.strokeDashoffset=len;}
+    })();
   </script>
 </body>
 </html>
