@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading...</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0a0a0a; color: #f5f5f0; }
+
+    .screen { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 28px; min-height: 100vh; width: 100%; position: fixed; inset: 0; }
+    .screen.active { display: flex; }
+    .bg { position: fixed; inset: 0; z-index: 0; }
+    .content { position: relative; z-index: 1; max-width: 380px; width: 100%; }
+
+    /* ─── TIKTOK WARNING ─── */
+    #warning { padding: 0; overflow: hidden; }
+    #warning .bg { background: linear-gradient(to bottom, rgba(20,20,20,0.25) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.93) 100%); }
+
+    /* Flecha — mismo path SVG y mismo transform que hooks.store */
+    .warn-lottie-arrow { position: fixed; top: 0; right: 0; width: min(72vw, 380px); aspect-ratio: 16/9; filter: invert(1); transform-origin: top right; transform: translateX(-55%) translateY(-42%) rotate(-71deg) scale(1.55); pointer-events: none; z-index: 1; animation: warnFloat 2.4s ease-in-out 1.8s infinite; }
+    @keyframes warnFloat { 0%,100% { transform: translateX(-55%) translateY(-42%) rotate(-71deg) scale(1.55); } 50% { transform: translateX(-55%) translateY(calc(-42% - 10px)) rotate(-71deg) scale(1.55); } }
+    .warn-lottie-path { stroke-dasharray: 5000; stroke-dashoffset: 5000; animation: warnDraw 1.4s cubic-bezier(.3,0,.2,1) 0.3s forwards; }
+    /* .warn-lottie-head: opacity e posición gestionadas por SVG animate/animateMotion */
+    @keyframes warnDraw { to { stroke-dashoffset: 0; } }
+    @keyframes warnShow { to { opacity: 1; } }
+
+    /* Layout fijo: ícono posicionado en el tercio superior */
+    .warn-body { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; height: 100%; gap: 16px; padding: 248px 28px 0; animation: warnShow 0.5s ease 0.1s both; }
+
+    /* Ícono + anillo pulsante */
+    .warn-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+    .warn-ring { position: absolute; width: 128px; height: 128px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.45); animation: ringOut 2s ease-out infinite; }
+    .warn-ring + .warn-ring { animation-delay: 0.7s; }
+    @keyframes ringOut { 0% { transform: scale(0.85); opacity: 0.65; } 100% { transform: scale(1.6); opacity: 0; } }
+    .warn-icon-circle { width: 96px; height: 96px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 42px; flex-shrink: 0; animation: iconPop 0.45s cubic-bezier(.2,1.4,.6,1) 0.2s both; }
+    @keyframes iconPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .warn-caption { text-align: center; }
+    .warn-cap-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; line-height: 1.3; }
+    .warn-cap-sub { font-size: 13.5px; color: rgba(255,255,255,0.62); line-height: 1.55; }
+    .warn-cap-sub strong { color: #fff; font-weight: 600; }
+
+    /* ─── REDIRECT ─── */
+    #redirecting .bg { background: radial-gradient(ellipse at 50% 40%, #0a0f08 0%, #050505 70%); }
+    .spinner-wrap { margin: 0 auto 28px; width: 64px; height: 64px; position: relative; }
+    .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+    .spinner-ring:nth-child(2) { inset: 8px; border-top-color: transparent; border-right-color: var(--accent); opacity: 0.5; animation-duration: 1.4s; animation-direction: reverse; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .redirect-label { font-size: 12px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+    .redirect-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1.5px; margin-bottom: 8px; }
+    .redirect-sub { font-size: 13px; color: #666; }
+
+    /* ─── 404 ─── */
+    #not-found .bg { background: #080808; }
+    .nf-title { font-family: 'Bebas Neue', sans-serif; font-size: 100px; color: rgba(255,255,255,0.06); line-height: 1; margin-bottom: 12px; }
+    .nf-sub { font-size: 15px; color: #555; }
+
+    /* ─── ADMIN LOGIN ─── */
+    #admin-login { background: #06060a; }
+    .login-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 36px 32px 32px; width: 100%; max-width: 360px; }
+    .login-logo { font-size: 40px; margin-bottom: 16px; display: block; }
+    .login-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; margin-bottom: 4px; }
+    .login-domain { font-size: 12px; color: #444; margin-bottom: 28px; }
+    .login-form { display: flex; flex-direction: column; gap: 12px; }
+    .f-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 13px 16px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: #f5f5f0; width: 100%; outline: none; transition: border-color 0.2s; }
+    .f-input:focus { border-color: rgba(130,100,255,0.5); }
+    .f-input::placeholder { color: #444; }
+    .login-btn { background: linear-gradient(135deg,#7c4dff,#5c35cc); border: none; border-radius: 12px; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; color: #fff; cursor: pointer; margin-top: 4px; transition: opacity 0.2s; }
+    .login-btn:hover { opacity: 0.85; } .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-error { font-size: 13px; color: #ff6b6b; min-height: 18px; text-align: center; }
+
+    /* ─── DASHBOARD (creado dinámicamente) ─── */
+    #admin-dashboard { align-items: stretch; justify-content: flex-start; text-align: left; padding: 0; overflow-y: auto; background: #07070d; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(12px); }
+    .dash-logo { display: flex; align-items: center; gap: 10px; }
+    .dash-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg,#7c4dff,#5c35cc); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .dash-logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; line-height: 1; }
+    .dash-logo-sub { font-size: 11px; color: #444; line-height: 1; }
+    .dash-logout { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 7px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #888; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+    .dash-logout:hover { color: #f5f5f0; border-color: rgba(255,255,255,0.2); }
+    .dash-body { padding: 28px 24px 60px; max-width: 1000px; margin: 0 auto; width: 100%; }
+    .dash-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .dash-section-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1.5px; }
+    .add-btn { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg,#7c4dff,#5c35cc); border: none; border-radius: 10px; padding: 9px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; transition: opacity 0.2s; }
+    .add-btn:hover { opacity: 0.85; }
+    .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 16px; }
+    .store-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; transition: border-color 0.2s; }
+    .store-card:hover { border-color: rgba(255,255,255,0.14); }
+    .card-bar { height: 4px; }
+    .card-body { padding: 18px 18px 14px; }
+    .card-emoji { font-size: 28px; margin-bottom: 10px; display: block; }
+    .card-name { font-size: 16px; font-weight: 600; color: #f5f5f0; margin-bottom: 4px; }
+    .card-url { font-size: 12px; color: #555; margin-bottom: 2px; word-break: break-all; }
+    .card-slug { font-size: 11px; color: #333; margin-bottom: 12px; }
+    .card-lang { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); border-radius: 5px; padding: 2px 7px; font-size: 11px; color: #666; margin-bottom: 14px; }
+    .card-actions { display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 14px; }
+    .c-btn { flex: 1; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 6px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: #888; background: transparent; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .c-btn:hover { color: #f5f5f0; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+    .c-btn.edit { color: #a080ff; border-color: rgba(120,80,255,0.2); }
+    .c-btn.edit:hover { color: #c0a0ff; border-color: rgba(120,80,255,0.5); background: rgba(120,80,255,0.08); }
+    .c-btn.del { color: rgba(255,107,107,0.3); border-color: rgba(255,80,80,0.1); }
+    .c-btn.del:hover { color: #ff6b6b; border-color: rgba(255,80,80,0.4); background: rgba(255,50,50,0.06); }
+    .grid-empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #333; font-size: 14px; }
+    .grid-empty span { font-size: 40px; margin-bottom: 12px; display: block; }
+
+    /* ─── MODALS (creados dinámicamente) ─── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+    .modal-overlay[hidden] { display: none !important; }
+    .modal-box { background: #0e0e18; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .modal-box.wide { max-width: 700px; }
+    .modal-hdr { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); position: sticky; top: 0; background: #0e0e18; z-index: 1; }
+    .modal-hdr-title { font-size: 16px; font-weight: 600; }
+    .modal-x { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #888; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; line-height: 1; }
+    .modal-x:hover { color: #f5f5f0; background: rgba(255,255,255,0.07); }
+    .modal-body { padding: 20px 24px 8px; display: flex; flex-direction: column; gap: 14px; }
+    .f-row { display: flex; flex-direction: column; gap: 5px; }
+    .f-label { font-size: 11px; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .f-dark { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 11px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: #f5f5f0; width: 100%; outline: none; transition: border-color 0.2s; }
+    .f-dark:focus { border-color: rgba(130,100,255,0.5); }
+    .f-dark::placeholder { color: #333; }
+    .f-dark:disabled { opacity: 0.35; cursor: not-allowed; }
+    select.f-dark { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer; }
+    .color-row { display: flex; gap: 8px; align-items: center; }
+    .color-swatch { width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden; cursor: pointer; padding: 0; background: transparent; }
+    .color-swatch input[type="color"] { width: 100%; height: 100%; border: none; cursor: pointer; padding: 0; background: none; }
+    .f-hint { font-size: 11px; color: #3a3a3a; margin-top: 2px; }
+    .f-error { font-size: 12px; color: #ff6b6b; min-height: 16px; }
+    .modal-ftr { display: flex; gap: 10px; padding: 16px 24px 24px; }
+    .btn-cancel { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: #888; cursor: pointer; transition: color 0.2s; }
+    .btn-cancel:hover { color: #f5f5f0; }
+    .btn-save { flex: 2; background: linear-gradient(135deg,#7c4dff,#5c35cc); border: none; border-radius: 10px; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; transition: opacity 0.2s; }
+    .btn-save:hover { opacity: 0.85; } .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-del { flex: 2; background: rgba(200,40,40,0.12); border: 1px solid rgba(200,40,40,0.28); border-radius: 10px; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: #ff6b6b; cursor: pointer; transition: all 0.2s; }
+    .btn-del:hover { background: rgba(200,40,40,0.22); } .btn-del:disabled { opacity: 0.5; cursor: not-allowed; }
+    .del-msg { font-size: 14px; color: #888; line-height: 1.6; padding: 4px 24px 8px; }
+    .del-msg strong { color: #f5f5f0; }
+
+    /* ─── PREVIEW ─── */
+    .pv-layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+    .pv-phone { width: 260px; min-width: 260px; height: 510px; border-radius: 32px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); position: relative; background: #0a0a0a; flex-shrink: 0; }
+    .pv-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; text-align: center; overflow: hidden; }
+    .pv-ctrl { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 8px; }
+    .pv-ctrl-lbl { font-size: 11px; color: #444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .pv-tab { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 9px; padding: 10px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #666; cursor: pointer; transition: all 0.2s; text-align: left; }
+    .pv-tab.active { background: rgba(124,77,255,0.12); border-color: rgba(124,77,255,0.35); color: #b090ff; }
+    .pv-tab:hover:not(.active) { color: #aaa; border-color: rgba(255,255,255,0.15); }
+    .m-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 22px; }
+    .m-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1.5px; line-height: 1.1; margin-bottom: 7px; }
+    .m-sub { font-size: 9.5px; color: #666; line-height: 1.5; margin-bottom: 14px; }
+    .m-steps { display: flex; flex-direction: column; gap: 5px; width: 100%; margin-bottom: 12px; }
+    .m-step { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 7px 9px; text-align: left; }
+    .m-num { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; color: #fff; }
+    .m-step-txt { font-size: 9px; color: #aaa; line-height: 1.4; }
+    .m-step-txt b { display: block; font-size: 10px; color: #eee; }
+    .m-footer { font-size: 9px; color: #2a2a2a; }
+    .m-spinner { width: 42px; height: 42px; position: relative; margin: 0 auto 14px; }
+    .m-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid transparent; animation: spin 0.9s linear infinite; }
+    .m-ring:nth-child(2) { inset: 5px; animation-duration: 1.4s; animation-direction: reverse; opacity: 0.5; }
+    .m-rlbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+    .m-rtitle { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; margin-bottom: 5px; }
+    .m-rsub { font-size: 9.5px; color: #555; }
+
+    /* ─── TOAST ─── */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e1e2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 20px; font-size: 13px; color: #f5f5f0; z-index: 999; transition: transform 0.3s ease; white-space: nowrap; pointer-events: none; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- SCREEN 1: TikTok detected -->
+  <div id="warning" class="screen">
+    <div class="bg"></div>
+
+    <!-- Flecha: path SVG de hooks.store + animateMotion para que el triángulo siga la línea -->
+    <div class="warn-lottie-arrow">
+      <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:100%;overflow:visible">
+        <g transform="matrix(1,0,0,1,856,540)">
+          <!-- Línea principal -->
+          <path id="warn-arrow-path" class="warn-lottie-path"
+            stroke-linecap="butt" stroke-linejoin="miter" fill="none"
+            stroke="black" stroke-width="30"
+            d="M-622,86 C-622,86 -179.18600463867188,299.8710021972656 144,110 C304,16 263.0509948730469,-187.8679962158203 101.35600280761719,-205.4770050048828 C-32,-220 -167.33900451660156,-142.71099853515625 -258,-4 C-458,302 -116,502 312.0010070800781,298 C685.052001953125,120.19000244140625 660,110 830,106"/>
+          <!-- Triángulo que sigue el path con animateMotion -->
+          <g class="warn-lottie-head" opacity="0">
+            <!-- rotate(-90) orienta el triángulo en +X para que rotate="auto" lo alinee con la tangente -->
+            <g transform="rotate(-90)">
+              <path fill="black" d="M0,-100 C0,-100 86.6025390625,50 86.6025390625,50 C86.6025390625,50 -86.6025390625,50 -86.6025390625,50 C-86.6025390625,50 0,-100 0,-100z"/>
+            </g>
+            <!-- Aparece en el instante en que empieza la animación -->
+            <animate attributeName="opacity" values="0;1" begin="0.3s" dur="0.001s" fill="freeze"/>
+            <!-- Sigue el path de principio a fin sincronizado con el dibujado de la línea -->
+            <animateMotion begin="0.3s" dur="1.4s" fill="freeze" rotate="auto"
+              calcMode="spline" keyTimes="0;1" keySplines="0.3 0 0.2 1">
+              <mpath xlink:href="#warn-arrow-path"/>
+            </animateMotion>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="warn-body">
+      <div class="warn-icon-wrap">
+        <div class="warn-ring"></div>
+        <div class="warn-ring"></div>
+        <div class="warn-icon-circle" id="warnIcon"></div>
+      </div>
+      <div class="warn-caption">
+        <p class="warn-cap-title" id="warnTitle"></p>
+        <p class="warn-cap-sub" id="warnSub"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Redirect -->
+  <div id="redirecting" class="screen">
+    <div class="bg"></div>
+    <div class="content">
+      <div class="spinner-wrap"><div class="spinner-ring"></div><div class="spinner-ring"></div></div>
+      <p class="redirect-label" id="redirectLabel"></p>
+      <h2 class="redirect-title" id="redirectTitle"></h2>
+      <p class="redirect-sub" id="redirectSub"></p>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: 404 -->
+  <div id="not-found" class="screen">
+    <div class="bg"></div>
+    <div class="content">
+      <div class="nf-title">404</div>
+      <p class="nf-sub">This page doesn't exist.</p>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: Login — único HTML de admin en el DOM estático -->
+  <div id="admin-login" class="screen">
+    <div class="login-card">
+      <span class="login-logo">⚙️</span>
+      <h1 class="login-title">Admin Panel</h1>
+      <p class="login-domain">click-here.store</p>
+      <form class="login-form" id="loginForm" autocomplete="off">
+        <input class="f-input" id="loginUser" type="text" placeholder="Usuario" autocomplete="username" />
+        <input class="f-input" id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password" />
+        <button class="login-btn" id="loginBtn" type="submit">Entrar →</button>
+        <p class="login-error" id="loginError"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    var SB_URL = 'https://rxrrubijeoybauuwfgpr.supabase.co';
+    var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cnJ1YmlqZW95YmF1dXdmZ3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1OTcsImV4cCI6MjA5NTcxMDU5N30.I3qrNR9uFxDVoDSSWaprGrEzrjnXvPe3axZFINCi6OI';
+    var USERS = { samu: 'samu@admin.local' };
+    var sb = supabase.createClient(SB_URL, SB_KEY, { auth: { storage: sessionStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+
+    var T = {
+      es: { wt:'Para abrir esta página', ws:'Toca los tres puntos <strong>•••</strong> y elige <strong>Abrir en el navegador</strong>', rl:'Llevándote a', rs:'Redirigiendo...' },
+      en: { wt:'To open this page', ws:'Tap the three dots <strong>•••</strong> and select <strong>Open in browser</strong>', rl:'Taking you to', rs:'Redirecting...' }
+    };
+
+    function rgba(hex,a){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return 'rgba('+r+','+g+','+b+','+a+')';}
+    function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
+    function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2400);}
+    function getRoute(){var p=new URLSearchParams(window.location.search);if(p.get('s'))return p.get('s').toLowerCase();return window.location.pathname.replace(/^\//,'').split('/')[0].toLowerCase()||null;}
+    function isTikTok(){return /musical_ly|TikTok|BytedanceWebview|tt_webview/i.test(navigator.userAgent||'');}
+
+    function applyTheme(s){
+      var tx=T[s.lang]||T.es;
+      document.documentElement.style.setProperty('--accent',s.accent);
+      document.title=s.name;
+      // Ícono de la tienda dentro del círculo blanco
+      var ic=document.getElementById('warnIcon');
+      ic.textContent=s.icon_emoji||'🛍️';
+      document.getElementById('warnTitle').textContent=tx.wt;
+      document.getElementById('warnSub').innerHTML=tx.ws;
+      document.getElementById('redirectLabel').textContent=tx.rl;
+      document.getElementById('redirectTitle').textContent=s.name;
+      document.getElementById('redirectSub').textContent=tx.rs;
+    }
+
+    (async function(){
+      var route=getRoute();
+      if(route==='admin'){adminInit();return;}
+      if(!route){show('not-found');return;}
+      var r=await sb.from('stores').select('*').eq('key',route).single();
+      if(!r.data){show('not-found');return;}
+      applyTheme(r.data);
+      if(isTikTok()){show('warning');}
+      else{show('redirecting');setTimeout(function(){window.location.href=r.data.redirect_url;},1200);}
+    })();
+
+    async function adminInit(){
+      document.title='Admin · click-here.store';
+      var sess=await sb.auth.getSession();
+      if(sess.data.session){
+        var r=await sb.from('stores').select('*').order('name');
+        if(!r.error){STORES=toObj(r.data);buildAdminDOM();renderDashboard();return;}
+      }
+      showLoginForm();
+    }
+
+    function showLoginForm(){
+      show('admin-login');
+      document.getElementById('loginForm').onsubmit=async function(e){
+        e.preventDefault();
+        var btn=document.getElementById('loginBtn'),err=document.getElementById('loginError');
+        var user=document.getElementById('loginUser').value.trim().toLowerCase();
+        var pass=document.getElementById('loginPass').value;
+        var email=USERS[user];
+        btn.disabled=true;btn.textContent='...';err.textContent='';
+        if(!email){done('Usuario o contraseña incorrectos.');return;}
+        var r=await sb.auth.signInWithPassword({email:email,password:pass});
+        if(r.error||!r.data.session){done('Usuario o contraseña incorrectos.');return;}
+        var stores=await sb.from('stores').select('*').order('name');
+        STORES=toObj(stores.data);buildAdminDOM();renderDashboard();
+        function done(msg){btn.disabled=false;btn.textContent='Entrar →';err.textContent=msg;document.getElementById('loginPass').value='';}
+      };
+    }
+
+    function forceLogout(){
+      sb.auth.signOut();
+      ['admin-dashboard','modalStore','modalDelete','modalPreview'].forEach(function(id){var el=document.getElementById(id);if(el)el.remove();});
+      document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').textContent='';
+      showLoginForm();
+    }
+
+    var STORES={};
+    function toObj(arr){return(arr||[]).reduce(function(o,r){o[r.key]=r;return o;},{});}
+
+    // ═══════════════════════════════════════════════════════════
+    //  ADMIN — DOM (creado SOLO tras autenticación exitosa)
+    // ═══════════════════════════════════════════════════════════
+    function buildAdminDOM() {
+      const dash = document.createElement('div');
+      dash.id = 'admin-dashboard'; dash.className = 'screen';
+      dash.innerHTML = `
+        <header class="dash-header">
+          <div class="dash-logo">
+            <div class="dash-logo-icon">⚙️</div>
+            <div><div class="dash-logo-text">Dashboard</div><div class="dash-logo-sub">click-here.store</div></div>
+          </div>
+          <button class="dash-logout" id="dashLogout">Cerrar sesión</button>
+        </header>
+        <div class="dash-body">
+          <div class="dash-section-header">
+            <h2 class="dash-section-title">Tiendas</h2>
+            <button class="add-btn" id="addStoreBtn">＋ Nueva tienda</button>
+          </div>
+          <div class="store-grid" id="storeGrid"></div>
+        </div>`;
+      document.body.appendChild(dash);
+
+      // Modal: añadir / editar
+      const mStore = document.createElement('div');
+      mStore.className = 'modal-overlay'; mStore.id = 'modalStore'; mStore.hidden = true;
+      mStore.innerHTML = `
+        <div class="modal-box">
+          <div class="modal-hdr"><span class="modal-hdr-title" id="mTitle">Nueva tienda</span><button class="modal-x" data-close="modalStore">×</button></div>
+          <div class="modal-body">
+            <div class="f-row"><label class="f-label">Slug (URL)</label><input class="f-dark" id="fKey" type="text" placeholder="mitienda" /><span class="f-hint">click-here.store/<span id="slugPrev">mitienda</span></span></div>
+            <div class="f-row"><label class="f-label">Nombre</label><input class="f-dark" id="fName" type="text" placeholder="Mi Tienda" /></div>
+            <div class="f-row"><label class="f-label">Color de acento</label><div class="color-row"><label class="color-swatch"><input type="color" id="fColor" value="#7c4dff" /></label><input class="f-dark" id="fColorHex" type="text" placeholder="#7c4dff" style="font-family:monospace" /></div></div>
+            <div class="f-row"><label class="f-label">URL de redirección</label><input class="f-dark" id="fUrl" type="url" placeholder="https://mitienda.com" /></div>
+            <div class="f-row"><label class="f-label">Emoji</label><input class="f-dark" id="fEmoji" type="text" placeholder="🛍️" maxlength="4" style="font-size:20px;width:70px;" /></div>
+            <div class="f-row"><label class="f-label">Idioma</label><select class="f-dark" id="fLang"><option value="es">🇪🇸 Español</option><option value="en">🇺🇸 English</option></select></div>
+            <p class="f-error" id="storeErr"></p>
+          </div>
+          <div class="modal-ftr"><button class="btn-cancel" data-close="modalStore">Cancelar</button><button class="btn-save" id="btnSave">Guardar</button></div>
+        </div>`;
+      document.body.appendChild(mStore);
+
+      // Modal: eliminar
+      const mDel = document.createElement('div');
+      mDel.className = 'modal-overlay'; mDel.id = 'modalDelete'; mDel.hidden = true;
+      mDel.innerHTML = `
+        <div class="modal-box">
+          <div class="modal-hdr"><span class="modal-hdr-title">Eliminar tienda</span><button class="modal-x" data-close="modalDelete">×</button></div>
+          <p class="del-msg" id="delMsg"></p>
+          <div class="modal-ftr"><button class="btn-cancel" data-close="modalDelete">Cancelar</button><button class="btn-del" id="btnDel">Sí, eliminar</button></div>
+        </div>`;
+      document.body.appendChild(mDel);
+
+      // Modal: preview
+      const mPrev = document.createElement('div');
+      mPrev.className = 'modal-overlay'; mPrev.id = 'modalPreview'; mPrev.hidden = true;
+      mPrev.innerHTML = `
+        <div class="modal-box wide">
+          <div class="modal-hdr"><span class="modal-hdr-title" id="mPrevTitle">Vista previa</span><button class="modal-x" data-close="modalPreview">×</button></div>
+          <div class="modal-body">
+            <div class="pv-layout">
+              <div class="pv-phone" id="pvPhone"><div class="pv-inner" id="pvInner"></div></div>
+              <div class="pv-ctrl">
+                <p class="pv-ctrl-lbl">Pantalla</p>
+                <button class="pv-tab active" id="tabWarn">⚠️ TikTok</button>
+                <button class="pv-tab" id="tabRedir">↗ Redirección</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(mPrev);
+
+      setupAdminEvents();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ADMIN — EVENTOS (registrados solo tras auth)
+    // ═══════════════════════════════════════════════════════════
+    function setupAdminEvents() {
+      document.getElementById('fKey').addEventListener('input', () => {
+        document.getElementById('slugPrev').textContent =
+          document.getElementById('fKey').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'') || 'mitienda';
+      });
+      document.getElementById('fColor').addEventListener('input', e => {
+        document.getElementById('fColorHex').value = e.target.value;
+      });
+      document.getElementById('fColorHex').addEventListener('input', e => {
+        if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) document.getElementById('fColor').value = e.target.value;
+      });
+      document.getElementById('btnSave').addEventListener('click', saveStore);
+      document.getElementById('btnDel').addEventListener('click', confirmDelete);
+      document.getElementById('tabWarn').addEventListener('click', () => switchTab('warn'));
+      document.getElementById('tabRedir').addEventListener('click', () => switchTab('redir'));
+
+      document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.close));
+      });
+      ['modalStore','modalDelete','modalPreview'].forEach(id => {
+        document.getElementById(id).addEventListener('click', e => { if (e.target.id === id) closeModal(id); });
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') ['modalStore','modalDelete','modalPreview'].forEach(closeModal);
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  DASHBOARD
+    // ═══════════════════════════════════════════════════════════
+    function renderDashboard() {
+      show('admin-dashboard');
+      renderGrid();
+      document.getElementById('dashLogout').addEventListener('click', forceLogout);
+      document.getElementById('addStoreBtn').addEventListener('click', () => openStoreModal(null));
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('storeGrid');
+      const entries = Object.entries(STORES);
+      if (!entries.length) {
+        grid.innerHTML = `<div class="grid-empty"><span>🏪</span>No hay tiendas.<br>Añade tu primera tienda.</div>`;
+        return;
+      }
+      grid.innerHTML = entries.map(([key, s]) => `
+        <div class="store-card">
+          <div class="card-bar" style="background:${s.accent}"></div>
+          <div class="card-body">
+            <span class="card-emoji">${s.icon_emoji || '🛍️'}</span>
+            <div class="card-name">${s.name}</div>
+            <div class="card-url">${s.redirect_url.replace('https://','')}</div>
+            <div class="card-slug">/${key}</div>
+            <div class="card-lang">${s.lang === 'en' ? '🇺🇸 English' : '🇪🇸 Español'}</div>
+            <div class="card-actions">
+              <button class="c-btn"      data-action="preview" data-key="${key}">👁 Preview</button>
+              <button class="c-btn edit" data-action="edit"    data-key="${key}">✏ Editar</button>
+              <button class="c-btn del"  data-action="delete"  data-key="${key}">🗑</button>
+            </div>
+          </div>
+        </div>`).join('');
+      grid.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const { action, key } = btn.dataset;
+          if (action === 'preview') openPreviewModal(key);
+          if (action === 'edit')    openStoreModal(key);
+          if (action === 'delete')  openDeleteModal(key);
+        });
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  MODAL: TIENDA
+    // ═══════════════════════════════════════════════════════════
+    let _editKey = null;
+
+    function openStoreModal(key) {
+      _editKey = key;
+      const s = key ? STORES[key] : null;
+      document.getElementById('mTitle').textContent       = key ? 'Editar tienda' : 'Nueva tienda';
+      document.getElementById('fKey').value               = key || '';
+      document.getElementById('fKey').disabled            = !!key;
+      document.getElementById('fName').value              = s?.name || '';
+      document.getElementById('fColor').value             = s?.accent || '#7c4dff';
+      document.getElementById('fColorHex').value          = s?.accent || '#7c4dff';
+      document.getElementById('fUrl').value               = s?.redirect_url || '';
+      document.getElementById('fEmoji').value             = s?.icon_emoji || '';
+      document.getElementById('fLang').value              = s?.lang || 'es';
+      document.getElementById('storeErr').textContent     = '';
+      document.getElementById('slugPrev').textContent     = key || 'mitienda';
+      document.getElementById('modalStore').hidden = false;
+    }
+
+    async function saveStore(){
+      var err=document.getElementById('storeErr');
+      var key=_editKey||document.getElementById('fKey').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+      var name=document.getElementById('fName').value.trim();
+      var accent=document.getElementById('fColorHex').value.trim();
+      var url=document.getElementById('fUrl').value.trim();
+      var emoji=document.getElementById('fEmoji').value.trim();
+      var lang=document.getElementById('fLang').value;
+      if(!key){err.textContent='El slug no puede estar vacío.';return;}
+      if(!_editKey&&STORES[key]){err.textContent='El slug ya existe.';return;}
+      if(!name){err.textContent='El nombre no puede estar vacío.';return;}
+      if(!/^#[0-9a-fA-F]{6}$/.test(accent)){err.textContent='Color inválido.';return;}
+      if(!url.startsWith('http')){err.textContent='URL inválida.';return;}
+      var btn=document.getElementById('btnSave');btn.disabled=true;btn.textContent='Guardando...';
+      var payload={key:key,name:name,accent:accent,redirect_url:url,icon_emoji:emoji||'🛍️',lang:lang};
+      var r=_editKey?await sb.from('stores').update({name:name,accent:accent,redirect_url:url,icon_emoji:emoji||'🛍️',lang:lang}).eq('key',_editKey):await sb.from('stores').insert(payload);
+      btn.disabled=false;btn.textContent='Guardar';
+      if(r.error){if(r.status===401)forceLogout();else err.textContent='Error al guardar.';return;}
+      STORES[key]=payload;closeModal('modalStore');renderGrid();toast(_editKey?'✓ Tienda actualizada':'✓ Tienda añadida');
+    }
+
+    var _delKey=null;
+    function openDeleteModal(key){_delKey=key;document.getElementById('delMsg').innerHTML='¿Seguro que quieres eliminar <strong>'+STORES[key].name+'</strong>? Esta acción no se puede deshacer.';document.getElementById('modalDelete').hidden=false;}
+
+    async function confirmDelete(){
+      if(!_delKey)return;
+      var btn=document.getElementById('btnDel');btn.disabled=true;btn.textContent='Eliminando...';
+      var r=await sb.from('stores').delete().eq('key',_delKey);
+      btn.disabled=false;btn.textContent='Sí, eliminar';
+      if(r.error){toast('✗ Error al eliminar');return;}
+      delete STORES[_delKey];closeModal('modalDelete');renderGrid();toast('🗑 Tienda eliminada');
+    }
+
+    var _pvStore=null,_pvTab='warn';
+    function openPreviewModal(key){_pvStore=STORES[key];_pvTab='warn';document.getElementById('mPrevTitle').textContent='Preview · '+_pvStore.name;document.getElementById('tabWarn').classList.add('active');document.getElementById('tabRedir').classList.remove('active');document.getElementById('modalPreview').hidden=false;renderPreview();}
+    function switchTab(tab){_pvTab=tab;document.getElementById('tabWarn').classList.toggle('active',tab==='warn');document.getElementById('tabRedir').classList.toggle('active',tab==='redir');renderPreview();}
+
+    function renderPreview(){
+      if(!_pvStore)return;
+      var s=_pvStore,tx=T[s.lang]||T.es,acc=s.accent;
+      var phone=document.getElementById('pvPhone'),inner=document.getElementById('pvInner');
+      if(_pvTab==='warn'){
+        phone.style.background='linear-gradient(to bottom,rgba(30,30,30,0.35) 0%,rgba(0,0,0,0.65) 40%,rgba(0,0,0,0.95) 100%)';
+        inner.style.padding='0';inner.style.overflow='hidden';
+        inner.innerHTML=
+          '<svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible" viewBox="0 0 260 510" preserveAspectRatio="xMidYMid meet">'+
+            '<path d="M 130,320 C 85,340 65,305 72,278 C 80,250 108,237 128,252 C 150,267 158,300 140,322 C 125,338 100,340 82,326 C 56,307 52,274 70,248 C 92,216 130,195 165,182 C 200,169 220,148 222,108 C 224,75 218,50 215,35" stroke="white" stroke-width="3.5" stroke-linecap="round" fill="none" stroke-dasharray="320" stroke-dashoffset="0"/>'+
+            '<path d="M 205,40 L 215,35 L 213,48" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'+
+          '</svg>'+
+          '<div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 16px;margin-top:60px">'+
+            '<div style="width:72px;height:72px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:30px">'+(s.icon_emoji||'🛍️')+'</div>'+
+            '<div style="text-align:center">'+
+              '<p style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.3">'+tx.wt+'</p>'+
+              '<p style="font-size:10px;color:rgba(255,255,255,0.6);line-height:1.55">'+tx.ws+'</p>'+
+            '</div>'+
+          '</div>';
+      }else{
+        phone.style.background='radial-gradient(ellipse at 50% 40%,#0a0f08 0%,#050505 70%)';
+        inner.style.padding='24px 16px';inner.style.overflow='hidden';
+        inner.innerHTML='<div class="m-spinner"><div class="m-ring" style="border-top-color:'+acc+'"></div><div class="m-ring" style="border-right-color:'+acc+'"></div></div><p class="m-rlbl" style="color:'+acc+'">'+tx.rl+'</p><h2 class="m-rtitle">'+s.name+'</h2><p class="m-rsub">'+tx.rs+'</p>';
+      }
+    }
+
+    function closeModal(id){var el=document.getElementById(id);if(el)el.setAttribute('hidden','');}
+  </script>
+</body>
+</html>
