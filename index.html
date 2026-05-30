@@ -29,15 +29,15 @@
     @keyframes warnDraw { to { stroke-dashoffset: 0; } }
     @keyframes warnShow { to { opacity: 1; } }
 
-    /* Layout — ícono centrado verticalmente igual que hooks.store */
-    .warn-body { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; padding: 0 28px 120px; animation: warnShow 0.5s ease 0.1s both; }
+    /* Layout — desplazado hacia abajo del centro */
+    .warn-body { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; padding: 120px 28px 0; animation: warnShow 0.5s ease 0.1s both; }
 
     /* Círculo principal */
     .warn-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
-    .warn-ring { position: absolute; width: 190px; height: 190px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.38); animation: ringOut 2.2s ease-out infinite; }
+    .warn-ring { position: absolute; width: 150px; height: 150px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.38); animation: ringOut 2.2s ease-out infinite; }
     .warn-ring + .warn-ring { animation-delay: 0.8s; }
     @keyframes ringOut { 0% { transform: scale(0.88); opacity: 0.6; } 100% { transform: scale(1.55); opacity: 0; } }
-    .warn-icon-circle { width: 160px; height: 160px; border-radius: 50%; background: #fff; overflow: hidden; position: relative; flex-shrink: 0; animation: iconPop 0.45s cubic-bezier(.2,1.4,.6,1) 0.2s both; }
+    .warn-icon-circle { width: 120px; height: 120px; border-radius: 50%; background: #fff; overflow: hidden; position: relative; flex-shrink: 0; animation: iconPop 0.45s cubic-bezier(.2,1.4,.6,1) 0.2s both; }
     @keyframes iconPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
     /* ── Animación interna del círculo (replica el Lottie de hooks.store) ──
@@ -74,10 +74,10 @@
       42%,100%{ opacity:0; }
     }
     .tik-spark { position:absolute; border-radius:50%; }
-    .tik-spark:nth-child(1){ width:7px;height:7px;background:#e86e17;top:58px;left:88px; }
-    .tik-spark:nth-child(2){ width:5px;height:5px;background:#e86e17;top:68px;left:96px; }
-    .tik-spark:nth-child(3){ width:6px;height:6px;background:#f09a40;top:52px;left:100px; }
-    .tik-spark:nth-child(4){ width:4px;height:4px;background:#e86e17;top:72px;left:84px; }
+    .tik-spark:nth-child(1){ width:7px;height:7px;background:#e86e17;top:44px;left:66px; }
+    .tik-spark:nth-child(2){ width:5px;height:5px;background:#e86e17;top:52px;left:74px; }
+    .tik-spark:nth-child(3){ width:6px;height:6px;background:#f09a40;top:38px;left:76px; }
+    .tik-spark:nth-child(4){ width:4px;height:4px;background:#e86e17;top:56px;left:60px; }
 
     /* Fase menú */
     .tik-menu-phase { padding:0 8px; gap:0; animation:tikMenu 6s ease-in-out infinite; opacity:0; width:100%; }
