@@ -409,7 +409,7 @@
       if(!r.data){show('not-found');return;}
       applyTheme(r.data);
       if(isTikTok()){show('warning');}
-      else{show('redirecting');setTimeout(function(){window.location.href=r.data.redirect_url;},300);}
+      else{show('redirecting');setTimeout(function(){window.location.href=r.data.redirect_url;},100);}
     })();
 
     async function adminInit(){
