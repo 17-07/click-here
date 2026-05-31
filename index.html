@@ -125,14 +125,14 @@
     .warn-cap-sub strong { color: #fff; font-weight: 600; }
 
     /* ─── REDIRECT ─── */
-    #redirecting .bg { background: radial-gradient(ellipse at 50% 40%, #0a0f08 0%, #050505 70%); }
+    #redirecting .bg { background: #fff; }
     .spinner-wrap { margin: 0 auto 28px; width: 64px; height: 64px; position: relative; }
     .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
     .spinner-ring:nth-child(2) { inset: 8px; border-top-color: transparent; border-right-color: var(--accent); opacity: 0.5; animation-duration: 1.4s; animation-direction: reverse; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .redirect-label { font-size: 12px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
-    .redirect-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1.5px; margin-bottom: 8px; }
-    .redirect-sub { font-size: 13px; color: #666; }
+    .redirect-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1.5px; margin-bottom: 8px; color: #111; }
+    .redirect-sub { font-size: 13px; color: #888; }
 
     /* ─── 404 ─── */
     #not-found .bg { background: #080808; }
@@ -652,9 +652,9 @@
       if(!_pvStore)return;
       var s=_pvStore,tx=T[s.lang]||T.es,acc=s.accent;
       var phone=document.getElementById('pvPhone'),inner=document.getElementById('pvInner');
-      phone.style.background='radial-gradient(ellipse at 50% 40%,#0a0f08 0%,#050505 70%)';
+      phone.style.background='#fff';
       inner.style.padding='24px 16px';inner.style.overflow='hidden';
-      inner.innerHTML='<div class="m-spinner"><div class="m-ring" style="border-top-color:'+acc+'"></div><div class="m-ring" style="border-right-color:'+acc+'"></div></div><p class="m-rlbl" style="color:'+acc+'">'+tx.rl+'</p><h2 class="m-rtitle">'+s.name+'</h2><p class="m-rsub">'+tx.rs+'</p>';
+      inner.innerHTML='<div class="m-spinner"><div class="m-ring" style="border-top-color:'+acc+'"></div><div class="m-ring" style="border-right-color:'+acc+'"></div></div><p class="m-rlbl" style="color:'+acc+'">'+tx.rl+'</p><h2 class="m-rtitle" style="color:#111">'+s.name+'</h2><p class="m-rsub" style="color:#888">'+tx.rs+'</p>';
     }
 
     function closeModal(id){var el=document.getElementById(id);if(el)el.setAttribute('hidden','');}
