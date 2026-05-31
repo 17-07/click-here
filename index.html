@@ -683,10 +683,20 @@
     function closeModal(id){var el=document.getElementById(id);if(el)el.setAttribute('hidden','');}
 
     // Sincroniza dasharray con la longitud real del path para que línea y triángulo vayan en sync exacto
-    (function(){
+    function initArrow(){
       var p=document.getElementById('warn-arrow-path');
       if(p){var len=Math.ceil(p.getTotalLength());p.style.strokeDasharray=len;p.style.strokeDashoffset=len;}
-    })();
+    }
+    initArrow();
+
+    // Reinicia la animación de la flecha cada 2 segundos (clone trick resetea CSS + SVG SMIL)
+    setInterval(function(){
+      var wrap=document.querySelector('.warn-lottie-arrow');
+      if(!wrap)return;
+      var clone=wrap.cloneNode(true);
+      wrap.parentNode.replaceChild(clone,wrap);
+      initArrow();
+    },2000);
   </script>
 </body>
 </html>
