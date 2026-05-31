@@ -244,6 +244,13 @@
     .m-rtitle { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; margin-bottom: 5px; }
     .m-rsub { font-size: 9.5px; color: #555; }
 
+    /* ─── DOMAINS BANNER ─── */
+    .domains-banner { display: flex; align-items: center; gap: 14px; background: rgba(124,77,255,0.06); border: 1px solid rgba(124,77,255,0.15); border-radius: 12px; padding: 10px 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .domains-label { font-size: 11px; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .domains-list { display: flex; gap: 8px; flex-wrap: wrap; }
+    .domain-pill { background: rgba(124,77,255,0.1); border: 1px solid rgba(124,77,255,0.25); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #b090ff; font-family: monospace; }
+    .domain-pill em { font-style: normal; opacity: 0.55; }
+
     /* ─── TOAST ─── */
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e1e2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 20px; font-size: 13px; color: #f5f5f0; z-index: 999; transition: transform 0.3s ease; white-space: nowrap; pointer-events: none; }
     .toast.show { transform: translateX(-50%) translateY(0); }
@@ -373,7 +380,8 @@
   <script>
     var SB_URL = 'https://rxrrubijeoybauuwfgpr.supabase.co';
     var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4cnJ1YmlqZW95YmF1dXdmZ3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1OTcsImV4cCI6MjA5NTcxMDU5N30.I3qrNR9uFxDVoDSSWaprGrEzrjnXvPe3axZFINCi6OI';
-    var USERS = { samu: 'samu@admin.local' };
+    var USERS = { samu: 'samu@admin.local', alexandru: 'alexandru@admin.local' };
+    var CURRENT_USER = null;
     var sb = supabase.createClient(SB_URL, SB_KEY, { auth: { storage: sessionStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
 
     var T = {
@@ -412,11 +420,14 @@
       else{show('redirecting');setTimeout(function(){window.location.href=r.data.redirect_url;},100);}
     })();
 
+    function ownerFromEmail(email){return Object.keys(USERS).find(function(k){return USERS[k]===email;})||'samu';}
+
     async function adminInit(){
       document.title='Admin · click-here.store';
       var sess=await sb.auth.getSession();
       if(sess.data.session){
-        var r=await sb.from('stores').select('*').order('name');
+        CURRENT_USER=ownerFromEmail(sess.data.session.user.email);
+        var r=await sb.from('stores').select('*').eq('owner',CURRENT_USER).order('name');
         if(!r.error){STORES=toObj(r.data);buildAdminDOM();renderDashboard();return;}
       }
       showLoginForm();
@@ -434,7 +445,8 @@
         if(!email){done('Usuario o contraseña incorrectos.');return;}
         var r=await sb.auth.signInWithPassword({email:email,password:pass});
         if(r.error||!r.data.session){done('Usuario o contraseña incorrectos.');return;}
-        var stores=await sb.from('stores').select('*').order('name');
+        CURRENT_USER=user;
+        var stores=await sb.from('stores').select('*').eq('owner',CURRENT_USER).order('name');
         STORES=toObj(stores.data);buildAdminDOM();renderDashboard();
         function done(msg){btn.disabled=false;btn.textContent='Entrar →';err.textContent=msg;document.getElementById('loginPass').value='';}
       };
@@ -460,11 +472,18 @@
         <header class="dash-header">
           <div class="dash-logo">
             <div class="dash-logo-icon">⚙️</div>
-            <div><div class="dash-logo-text">Dashboard</div><div class="dash-logo-sub">click-here.store</div></div>
+            <div><div class="dash-logo-text">Dashboard</div><div class="dash-logo-sub">${CURRENT_USER}</div></div>
           </div>
           <button class="dash-logout" id="dashLogout">Cerrar sesión</button>
         </header>
         <div class="dash-body">
+          <div class="domains-banner">
+            <span class="domains-label">Dominios disponibles</span>
+            <div class="domains-list">
+              <span class="domain-pill">🌐 click-here.store/<em>mitienda</em></span>
+              <span class="domain-pill">🌐 pulsa-aqui.store/<em>mitienda</em></span>
+            </div>
+          </div>
           <div class="dash-section-header">
             <h2 class="dash-section-title">Tiendas</h2>
             <button class="add-btn" id="addStoreBtn">＋ Nueva tienda</button>
@@ -480,7 +499,7 @@
         <div class="modal-box">
           <div class="modal-hdr"><span class="modal-hdr-title" id="mTitle">Nueva tienda</span><button class="modal-x" data-close="modalStore">×</button></div>
           <div class="modal-body">
-            <div class="f-row"><label class="f-label">Slug (URL)</label><input class="f-dark" id="fKey" type="text" placeholder="mitienda" /><span class="f-hint">click-here.store/<span id="slugPrev">mitienda</span></span></div>
+            <div class="f-row"><label class="f-label">Slug (URL)</label><input class="f-dark" id="fKey" type="text" placeholder="mitienda" /><div class="f-hint">click-here.store/<span id="slugPrev">mitienda</span><br>pulsa-aqui.store/<span id="slugPrev2">mitienda</span></div></div>
             <div class="f-row"><label class="f-label">Nombre</label><input class="f-dark" id="fName" type="text" placeholder="Mi Tienda" /></div>
             <div class="f-row"><label class="f-label">Color de acento</label><div class="color-row"><label class="color-swatch"><input type="color" id="fColor" value="#7c4dff" /></label><input class="f-dark" id="fColorHex" type="text" placeholder="#7c4dff" style="font-family:monospace" /></div></div>
             <div class="f-row"><label class="f-label">URL de redirección</label><input class="f-dark" id="fUrl" type="url" placeholder="https://mitienda.com" /></div>
@@ -523,8 +542,9 @@
     // ═══════════════════════════════════════════════════════════
     function setupAdminEvents() {
       document.getElementById('fKey').addEventListener('input', () => {
-        document.getElementById('slugPrev').textContent =
-          document.getElementById('fKey').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'') || 'mitienda';
+        var slug = document.getElementById('fKey').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'') || 'mitienda';
+        document.getElementById('slugPrev').textContent = slug;
+        document.getElementById('slugPrev2').textContent = slug;
       });
       document.getElementById('fColor').addEventListener('input', e => {
         document.getElementById('fColorHex').value = e.target.value;
@@ -607,7 +627,8 @@
       document.getElementById('fEmoji').value             = s?.icon_emoji || '';
       document.getElementById('fLang').value              = s?.lang || 'es';
       document.getElementById('storeErr').textContent     = '';
-      document.getElementById('slugPrev').textContent     = key || 'mitienda';
+      document.getElementById('slugPrev').textContent      = key || 'mitienda';
+      document.getElementById('slugPrev2').textContent     = key || 'mitienda';
       document.getElementById('modalStore').hidden = false;
     }
 
@@ -625,7 +646,7 @@
       if(!/^#[0-9a-fA-F]{6}$/.test(accent)){err.textContent='Color inválido.';return;}
       if(!url.startsWith('http')){err.textContent='URL inválida.';return;}
       var btn=document.getElementById('btnSave');btn.disabled=true;btn.textContent='Guardando...';
-      var payload={key:newKey,name:name,accent:accent,redirect_url:url,icon_emoji:emoji||'🛍️',lang:lang};
+      var payload={key:newKey,name:name,accent:accent,redirect_url:url,icon_emoji:emoji||'🛍️',lang:lang,owner:CURRENT_USER};
       var r=_editKey?await sb.from('stores').update(payload).eq('key',_editKey):await sb.from('stores').insert(payload);
       btn.disabled=false;btn.textContent='Guardar';
       if(r.error){if(r.status===401)forceLogout();else err.textContent='Error al guardar.';return;}
