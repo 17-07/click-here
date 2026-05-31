@@ -504,17 +504,10 @@
       const mPrev = document.createElement('div');
       mPrev.className = 'modal-overlay'; mPrev.id = 'modalPreview'; mPrev.hidden = true;
       mPrev.innerHTML = `
-        <div class="modal-box wide">
+        <div class="modal-box">
           <div class="modal-hdr"><span class="modal-hdr-title" id="mPrevTitle">Vista previa</span><button class="modal-x" data-close="modalPreview">×</button></div>
-          <div class="modal-body">
-            <div class="pv-layout">
-              <div class="pv-phone" id="pvPhone"><div class="pv-inner" id="pvInner"></div></div>
-              <div class="pv-ctrl">
-                <p class="pv-ctrl-lbl">Pantalla</p>
-                <button class="pv-tab active" id="tabWarn">⚠️ TikTok</button>
-                <button class="pv-tab" id="tabRedir">↗ Redirección</button>
-              </div>
-            </div>
+          <div class="modal-body" style="display:flex;justify-content:center;padding:24px 0">
+            <div class="pv-phone" id="pvPhone"><div class="pv-inner" id="pvInner"></div></div>
           </div>
         </div>`;
       document.body.appendChild(mPrev);
@@ -538,8 +531,6 @@
       });
       document.getElementById('btnSave').addEventListener('click', saveStore);
       document.getElementById('btnDel').addEventListener('click', confirmDelete);
-      document.getElementById('tabWarn').addEventListener('click', () => switchTab('warn'));
-      document.getElementById('tabRedir').addEventListener('click', () => switchTab('redir'));
 
       document.querySelectorAll('[data-close]').forEach(btn => {
         btn.addEventListener('click', () => closeModal(btn.dataset.close));
@@ -605,7 +596,7 @@
       const s = key ? STORES[key] : null;
       document.getElementById('mTitle').textContent       = key ? 'Editar tienda' : 'Nueva tienda';
       document.getElementById('fKey').value               = key || '';
-      document.getElementById('fKey').disabled            = !!key;
+      document.getElementById('fKey').disabled            = false;
       document.getElementById('fName').value              = s?.name || '';
       document.getElementById('fColor').value             = s?.accent || '#7c4dff';
       document.getElementById('fColorHex').value          = s?.accent || '#7c4dff';
@@ -619,23 +610,24 @@
 
     async function saveStore(){
       var err=document.getElementById('storeErr');
-      var key=_editKey||document.getElementById('fKey').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+      var newKey=document.getElementById('fKey').value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
       var name=document.getElementById('fName').value.trim();
       var accent=document.getElementById('fColorHex').value.trim();
       var url=document.getElementById('fUrl').value.trim();
       var emoji=document.getElementById('fEmoji').value.trim();
       var lang=document.getElementById('fLang').value;
-      if(!key){err.textContent='El slug no puede estar vacío.';return;}
-      if(!_editKey&&STORES[key]){err.textContent='El slug ya existe.';return;}
+      if(!newKey){err.textContent='El slug no puede estar vacío.';return;}
+      if(STORES[newKey]&&newKey!==_editKey){err.textContent='El slug ya existe.';return;}
       if(!name){err.textContent='El nombre no puede estar vacío.';return;}
       if(!/^#[0-9a-fA-F]{6}$/.test(accent)){err.textContent='Color inválido.';return;}
       if(!url.startsWith('http')){err.textContent='URL inválida.';return;}
       var btn=document.getElementById('btnSave');btn.disabled=true;btn.textContent='Guardando...';
-      var payload={key:key,name:name,accent:accent,redirect_url:url,icon_emoji:emoji||'🛍️',lang:lang};
-      var r=_editKey?await sb.from('stores').update({name:name,accent:accent,redirect_url:url,icon_emoji:emoji||'🛍️',lang:lang}).eq('key',_editKey):await sb.from('stores').insert(payload);
+      var payload={key:newKey,name:name,accent:accent,redirect_url:url,icon_emoji:emoji||'🛍️',lang:lang};
+      var r=_editKey?await sb.from('stores').update(payload).eq('key',_editKey):await sb.from('stores').insert(payload);
       btn.disabled=false;btn.textContent='Guardar';
       if(r.error){if(r.status===401)forceLogout();else err.textContent='Error al guardar.';return;}
-      STORES[key]=payload;closeModal('modalStore');renderGrid();toast(_editKey?'✓ Tienda actualizada':'✓ Tienda añadida');
+      if(_editKey&&_editKey!==newKey)delete STORES[_editKey];
+      STORES[newKey]=payload;closeModal('modalStore');renderGrid();toast(_editKey?'✓ Tienda actualizada':'✓ Tienda añadida');
     }
 
     var _delKey=null;
@@ -650,34 +642,16 @@
       delete STORES[_delKey];closeModal('modalDelete');renderGrid();toast('🗑 Tienda eliminada');
     }
 
-    var _pvStore=null,_pvTab='warn';
-    function openPreviewModal(key){_pvStore=STORES[key];_pvTab='warn';document.getElementById('mPrevTitle').textContent='Preview · '+_pvStore.name;document.getElementById('tabWarn').classList.add('active');document.getElementById('tabRedir').classList.remove('active');document.getElementById('modalPreview').hidden=false;renderPreview();}
-    function switchTab(tab){_pvTab=tab;document.getElementById('tabWarn').classList.toggle('active',tab==='warn');document.getElementById('tabRedir').classList.toggle('active',tab==='redir');renderPreview();}
+    var _pvStore=null;
+    function openPreviewModal(key){_pvStore=STORES[key];document.getElementById('mPrevTitle').textContent='Preview · '+_pvStore.name;document.getElementById('modalPreview').hidden=false;renderPreview();}
 
     function renderPreview(){
       if(!_pvStore)return;
       var s=_pvStore,tx=T[s.lang]||T.es,acc=s.accent;
       var phone=document.getElementById('pvPhone'),inner=document.getElementById('pvInner');
-      if(_pvTab==='warn'){
-        phone.style.background='linear-gradient(to bottom,rgba(30,30,30,0.35) 0%,rgba(0,0,0,0.65) 40%,rgba(0,0,0,0.95) 100%)';
-        inner.style.padding='0';inner.style.overflow='hidden';
-        inner.innerHTML=
-          '<svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible" viewBox="0 0 260 510" preserveAspectRatio="xMidYMid meet">'+
-            '<path d="M 130,320 C 85,340 65,305 72,278 C 80,250 108,237 128,252 C 150,267 158,300 140,322 C 125,338 100,340 82,326 C 56,307 52,274 70,248 C 92,216 130,195 165,182 C 200,169 220,148 222,108 C 224,75 218,50 215,35" stroke="white" stroke-width="3.5" stroke-linecap="round" fill="none" stroke-dasharray="320" stroke-dashoffset="0"/>'+
-            '<path d="M 205,40 L 215,35 L 213,48" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'+
-          '</svg>'+
-          '<div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 16px;margin-top:60px">'+
-            '<div style="width:72px;height:72px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:30px">'+(s.icon_emoji||'🛍️')+'</div>'+
-            '<div style="text-align:center">'+
-              '<p style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.3">'+tx.wt+'</p>'+
-              '<p style="font-size:10px;color:rgba(255,255,255,0.6);line-height:1.55">'+tx.ws+'</p>'+
-            '</div>'+
-          '</div>';
-      }else{
-        phone.style.background='radial-gradient(ellipse at 50% 40%,#0a0f08 0%,#050505 70%)';
-        inner.style.padding='24px 16px';inner.style.overflow='hidden';
-        inner.innerHTML='<div class="m-spinner"><div class="m-ring" style="border-top-color:'+acc+'"></div><div class="m-ring" style="border-right-color:'+acc+'"></div></div><p class="m-rlbl" style="color:'+acc+'">'+tx.rl+'</p><h2 class="m-rtitle">'+s.name+'</h2><p class="m-rsub">'+tx.rs+'</p>';
-      }
+      phone.style.background='radial-gradient(ellipse at 50% 40%,#0a0f08 0%,#050505 70%)';
+      inner.style.padding='24px 16px';inner.style.overflow='hidden';
+      inner.innerHTML='<div class="m-spinner"><div class="m-ring" style="border-top-color:'+acc+'"></div><div class="m-ring" style="border-right-color:'+acc+'"></div></div><p class="m-rlbl" style="color:'+acc+'">'+tx.rl+'</p><h2 class="m-rtitle">'+s.name+'</h2><p class="m-rsub">'+tx.rs+'</p>';
     }
 
     function closeModal(id){var el=document.getElementById(id);if(el)el.setAttribute('hidden','');}
