@@ -81,15 +81,15 @@
     .tik-spark:nth-child(4){ width:4px;height:4px;background:#e86e17;top:56px;left:60px; }
 
     /* Fase menú */
-    .tik-menu-phase { padding:0 8px; gap:0; animation:tikMenu 4s ease-in-out infinite; opacity:0; width:100%; }
+    .tik-menu-phase { padding:0 4px; gap:0; animation:tikMenu 4s ease-in-out infinite; opacity:0; width:100%; }
     @keyframes tikMenu {
       0%,40%  { opacity:0; transform:scale(.95); }
       48%,88% { opacity:1; transform:scale(1); }
       95%,100%{ opacity:0; transform:scale(.95); }
     }
-    .tik-menu-row { display:flex; align-items:center; gap:6px; padding:7px 10px; font-size:10.5px; font-weight:500; color:#222; border-bottom:1px solid rgba(0,0,0,0.07); white-space:nowrap; }
+    .tik-menu-row { display:flex; align-items:center; gap:4px; padding:5px 6px; font-size:8px; font-weight:500; color:#222; border-bottom:1px solid rgba(0,0,0,0.07); white-space:nowrap; overflow:hidden; }
     .tik-menu-row:last-child { border-bottom:none; }
-    .tik-menu-row svg { width:13px; height:13px; flex-shrink:0; opacity:0.6; }
+    .tik-menu-row svg { width:10px; height:10px; flex-shrink:0; opacity:0.6; }
     .tik-menu-row.tik-sel { background:rgba(0,0,0,0.06); color:#000; font-weight:700; animation:tikSelPulse 4s ease-in-out infinite; }
     @keyframes tikSelPulse {
       0%,60%  { background:transparent; }
@@ -97,10 +97,14 @@
       85%,100%{ background:transparent; }
     }
     /* Cursor apuntando a "Abrir en el navegador" (fila central) */
-    .tik-cursor { position:absolute; top:50%; right:10px; transform:translateY(-50%); font-size:20px; animation:tikCursor 4s ease-in-out infinite; opacity:0; }
+    .tik-cursor { position:absolute; top:50%; right:6px; transform:translateY(-50%); font-size:26px; animation:tikCursor 4s ease-in-out infinite; opacity:0; }
     @keyframes tikCursor {
-      0%,48%   { opacity:0; transform:translateY(-50%) translate(8px,6px); }
-      56%,82%  { opacity:1; transform:translateY(-50%) translate(0,0); }
+      0%,48%   { opacity:0; transform:translateY(-50%) translate(10px,8px) scale(1); }
+      55%      { opacity:1; transform:translateY(-50%) translate(0,0) scale(1); }
+      62%      { transform:translateY(-50%) translate(0,0) scale(0.72); }
+      66%      { transform:translateY(-50%) translate(0,0) scale(1); }
+      72%      { transform:translateY(-50%) translate(0,0) scale(0.72); }
+      76%,82%  { opacity:1; transform:translateY(-50%) translate(0,0) scale(1); }
       88%,100% { opacity:0; }
     }
 
